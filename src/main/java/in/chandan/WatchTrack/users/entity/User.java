@@ -1,5 +1,6 @@
 package in.chandan.WatchTrack.users.entity;
 
+import in.chandan.WatchTrack.users.enums.Roles;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,9 +26,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    public User(String username, String email, String password) {
+    @Enumerated(EnumType.STRING)
+    private Roles role;
+
+    public User(String username, String email, String password,Roles role) {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.role = role;
     }
 }

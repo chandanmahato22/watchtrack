@@ -2,8 +2,9 @@ package in.chandan.WatchTrack.auth.controller;
 
 import in.chandan.WatchTrack.auth.dto.LoginDto;
 import in.chandan.WatchTrack.auth.service.AuthService;
-import in.chandan.WatchTrack.users.dto.RegDto;
-import in.chandan.WatchTrack.users.dto.RegRespDto;
+import in.chandan.WatchTrack.auth.dto.RegDto;
+import in.chandan.WatchTrack.auth.dto.RegRespDto;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,8 +26,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDto req){
-        String resp = authService.verifyUser(req);
+    public ResponseEntity<String> login(@RequestBody LoginDto req,
+                                        HttpServletRequest servletRequest){
+        String resp = authService.verifyUser(req,servletRequest);
 
         return ResponseEntity.ok(resp);
     }
