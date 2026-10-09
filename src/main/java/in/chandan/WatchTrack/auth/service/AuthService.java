@@ -8,6 +8,7 @@ import in.chandan.WatchTrack.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.catalina.webresources.JarWarResource;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +34,7 @@ public class AuthService {
         User user = new User();
         user.setEmail(req.getEmail());
         user.setUsername(req.getUsername());
-        user.setRole(Roles.valueOf(req.getRole()));
+        user.setRole(Roles.valueOf("USER"));
         String rawPass = req.getPassword();
         String hassPass = passwordEncoder.encode(rawPass);
 
@@ -66,6 +67,14 @@ public class AuthService {
             rateLimitService.recordFailedAttempt(ip);
             throw ex;
         }
+    }
+
+    public User getCurrentUser(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElseThrow(
+                () -> new RuntimeException("user not found")
+        );
+        return user;
     }
 
 }

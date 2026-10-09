@@ -16,5 +16,4 @@ public class RegDto {
 
     private String password;
 
-    private String role;
 }
