@@ -22,7 +22,7 @@ public class TmdbMovieDetails {
     @JsonProperty("original_language")
     private String originalLanguage;
 
-    @JsonProperty("release_data")
+    @JsonProperty("release_date")
     private String releaseDate;
 
     private Integer runTime;

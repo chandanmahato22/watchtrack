@@ -4,8 +4,10 @@ import in.chandan.WatchTrack.catalog.dto.TmdbMovieDetails;
 import in.chandan.WatchTrack.catalog.dto.TmdbTvDetails;
 import in.chandan.WatchTrack.catalog.entity.Title;
 import in.chandan.WatchTrack.catalog.service.TitleService;
+import in.chandan.WatchTrack.tmdb.dto.TmdbSeasonDetails;
 import in.chandan.WatchTrack.tmdb.service.TmdbClient;
 import in.chandan.WatchTrack.tmdb.dto.TmdbSearchResponse;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,5 +52,11 @@ public class TmdbController {
     public ResponseEntity<Title> saveTv(@PathVariable Long id){
         Title resp = titleService.saveTv(id);
         return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/tv/{id}/season/{seasonNumber}")
+    public ResponseEntity<TmdbSeasonDetails> getSeasonsDetail(@PathVariable Long id,
+                                                              @PathVariable Integer seasonNumber){
+        return ResponseEntity.ok(tmdbClient.getSeasonDetails(id,seasonNumber));
     }
 }

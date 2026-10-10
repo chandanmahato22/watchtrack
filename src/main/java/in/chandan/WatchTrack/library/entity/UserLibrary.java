@@ -20,7 +20,6 @@ import lombok.Setter;
         }
 )
 public class UserLibrary {
-
     @Id
     @GeneratedValue(strategy =  GenerationType.IDENTITY)
     private Long id;

@@ -3,6 +3,7 @@ package in.chandan.WatchTrack.tmdb.service;
 import in.chandan.WatchTrack.catalog.dto.TmdbMovieDetails;
 import in.chandan.WatchTrack.catalog.dto.TmdbTvDetails;
 import in.chandan.WatchTrack.tmdb.dto.TmdbSearchResponse;
+import in.chandan.WatchTrack.tmdb.dto.TmdbSeasonDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -51,5 +52,13 @@ public class TmdbClient {
                 .uri("/tv/{id}",id)
                 .retrieve()
                 .body(TmdbTvDetails.class);
+    }
+
+    public TmdbSeasonDetails getSeasonDetails(Long tvId,
+                                              Integer seasonNumber){
+        return restClient.get().
+                uri("/tv/{id}/season/{seasonNumber}",tvId,seasonNumber)
+                .retrieve()
+                .body(TmdbSeasonDetails.class);
     }
 }

@@ -9,7 +9,8 @@ import lombok.Setter;
 @Setter
 public class LibraryData {
     private Long id;
-    private Title title;
+    private String name;
+    private String mediaType;
     private LibraryStatus status;
     private Integer currentEpisode;
     private Integer currentSeason;

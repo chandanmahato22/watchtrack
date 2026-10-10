@@ -10,7 +10,7 @@ public class AddToLibraryRequest {
 
     private Long externalId;
     private String status;
-
+    private String type;
     private Integer season = 1;
     private Integer episode = 1;
 
