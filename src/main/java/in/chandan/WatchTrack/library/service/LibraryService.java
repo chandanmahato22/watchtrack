@@ -50,38 +50,37 @@ public class LibraryService {
         this.episodeRepository = episodeRepository;
     }
 
-
     public UserLibrary addToLibrary(AddToLibraryRequest request){
-
         User user = authService.getCurrentUser();
         Title title;
 
         if("MOVIE".equals(request.getType())){
-            title = titleService.saveTv(request.getExternalId());
+            title = titleService.saveMovie(request.getExternalId());
         }else title = titleService.saveTv(request.getExternalId());
 
-        return libraryRepository.findByIdAndUser(request.getExternalId(), user).orElseGet(
-                () -> {
-                    UserLibrary library = new UserLibrary();
+        var existing = libraryRepository.findByUserAndTitle(user,title);
+        if(existing.isPresent()){
+            return existing.get();
+        }
 
-                    library.setStatus(LibraryStatus.valueOf(request.getStatus()));
-                    library.setTitle(title);
-                    library.setStatus(LibraryStatus.valueOf(request.getStatus()));
-                    if("TV".equals(request.getType())) {
-                        if(!validateProgress(title, request.getSeason(), request.getEpisode())){
-                            throw new IllegalArgumentException("invalid seasonNumber or EpisodeNumber");
-                        }
-                        library.setCurrentSeason(request.getSeason());
-                        library.setCurrentEpisode(request.getEpisode());
-                    }else {
-                        library.setCurrentEpisode(null);
-                        library.setCurrentSeason(null);
-                    }
-                    library.setUser(user);
+        UserLibrary library = new UserLibrary();
 
-                    return libraryRepository.save(library);
-                }
-        );
+        library.setStatus(LibraryStatus.valueOf(request.getStatus()));
+        library.setTitle(title);
+
+        if("TV".equals(request.getType())) {
+            if(!validateProgress(title, request.getSeason(), request.getEpisode())){
+                throw new IllegalArgumentException("invalid seasonNumber or EpisodeNumber");
+            }
+            library.setCurrentSeason(request.getSeason());
+            library.setCurrentEpisode(request.getEpisode());
+        }else {
+            library.setCurrentEpisode(null);
+            library.setCurrentSeason(null);
+        }
+        library.setUser(user);
+
+        return libraryRepository.save(library);
     }
 
     public List<LibraryData> getLibraryData(){
@@ -103,8 +102,15 @@ public class LibraryService {
         UserLibrary library = libraryRepository.findByUserAndTitle(user, title).orElseThrow(
                 () -> new RuntimeException("Library entry not found")
         );
+        LibraryStatus status;
+        try{
+            status = LibraryStatus.valueOf(req.getStatus());
+        }
+        catch(IllegalArgumentException | NullPointerException e){
+            throw new IllegalArgumentException("Invalid library status");
+        }
 
-        library.setStatus(LibraryStatus.valueOf(req.getStatus()));
+        library.setStatus(status);
 
         return LIbraryMapper.toLibraryData(library);
     }
@@ -126,15 +132,6 @@ public class LibraryService {
             Integer seasonNumber = req.getCurrentSeason();
             Integer episodeNumber = req.getCurrentEpisode();
 
-//            Season season = seasonRepository.findByTitleAndSeasonNumber(title,seasonNumber).orElseThrow(
-//                    () -> new IllegalArgumentException("season " + seasonNumber +
-//                            " has not been synced for this title")
-//            );
-//
-//            Episode episode = episodeRepository
-//                    .findBySeasonAndEpisodeNumber(season,episodeNumber).orElseThrow(
-//                            () -> new IllegalArgumentException("episode " + episodeNumber + " not aired yet")
-//                    );
             if(!validateProgress(title, seasonNumber,episodeNumber)){
                 throw new IllegalArgumentException("invalid seasonNumber or EpisodeNumber");
             }
@@ -144,13 +141,48 @@ public class LibraryService {
             return library;
     }
 
-    private boolean validateProgress(Title title,Integer seasonNumber , Integer episodeNumber) {
-        if(seasonNumber == null || seasonNumber < 1 || episodeNumber == null || episodeNumber < 1) return false;
-        Season season = seasonRepository.findByTitleAndSeasonNumber(title, seasonNumber).orElse(null);
-        if(season == null) return false;
+//    private boolean validateProgress(Title title,Integer seasonNumber , Integer episodeNumber) {
+//        if(seasonNumber == null || seasonNumber < 1 || episodeNumber == null || episodeNumber < 1) return false;
+//        Season season = seasonRepository.findByTitleAndSeasonNumber(title, seasonNumber).orElse(null);
+//        if(season == null) return false;
+//        Episode episode = episodeRepository
+//                .findBySeasonAndEpisodeNumber(season, episodeNumber).orElse(null);
+//       return episode != null;
+//    }
+
+
+    private boolean validateProgress(
+            Title title,
+            Integer seasonNumber,
+            Integer episodeNumber) {
+
+        System.out.println("Title ID: " + title.getId());
+        System.out.println("TMDB ID: " + title.getExternalId());
+        System.out.println("Season number: " + seasonNumber);
+        System.out.println("Episode number: " + episodeNumber);
+
+        Season season = seasonRepository
+                .findByTitleAndSeasonNumber(title, seasonNumber)
+                .orElse(null);
+
+        if (season == null) {
+            System.out.println("DEBUG: Season not found for this title");
+            return false;
+        }
+
+        System.out.println("Found season ID: " + season.getId());
+
         Episode episode = episodeRepository
-                .findBySeasonAndEpisodeNumber(season, episodeNumber).orElse(null);
-       return episode != null;
+                .findBySeasonAndEpisodeNumber(season, episodeNumber)
+                .orElse(null);
+
+        if (episode == null) {
+            System.out.println("DEBUG: Episode not found in this season");
+            return false;
+        }
+
+        System.out.println("Found episode ID: " + episode.getId());
+        return true;
     }
 
 }
