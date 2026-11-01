@@ -12,4 +12,5 @@ public interface SeasonRepository extends JpaRepository<Season,Long> {
 
     Optional<Season> findByTitleAndSeasonNumber(Title title,
                                                 Integer seasonNumber);
+    Optional<Season> findFirstByTitleOrderBySeasonNumberDesc(Title title);
 }

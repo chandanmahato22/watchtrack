@@ -6,12 +6,11 @@ import in.chandan.WatchTrack.catalog.repository.EpisodeRepository;
 import in.chandan.WatchTrack.enums.LibraryStatus;
 import in.chandan.WatchTrack.library.entity.UserLibrary;
 import in.chandan.WatchTrack.library.repository.LibraryRepository;
-import in.chandan.WatchTrack.library.service.LibraryService;
+import in.chandan.WatchTrack.notification.dto.EmailNotificationMessage;
 import in.chandan.WatchTrack.notification.entity.Notification;
 import in.chandan.WatchTrack.notification.repository.NotificationRepository;
+import in.chandan.WatchTrack.notification.service.EmailNotificationPublisher;
 import in.chandan.WatchTrack.users.entity.User;
-import org.aspectj.weaver.ast.Not;
-import org.hibernate.tool.schema.internal.exec.ScriptSourceInputFromReader;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -24,11 +23,13 @@ public class EpisodeTrackingService {
     private final EpisodeRepository episodeRepository;
     private final LibraryRepository libraryRepository;
     private final NotificationRepository notificationRepository;
+    private final EmailNotificationPublisher emailNotificationPublisher;
 
-    public EpisodeTrackingService(EpisodeRepository episodeRepository, LibraryRepository libraryRepository, NotificationRepository notificationRepository) {
+    public EpisodeTrackingService(EpisodeRepository episodeRepository, LibraryRepository libraryRepository, NotificationRepository notificationRepository, EmailNotificationPublisher emailNotificationPublisher) {
         this.episodeRepository = episodeRepository;
         this.libraryRepository = libraryRepository;
         this.notificationRepository = notificationRepository;
+        this.emailNotificationPublisher = emailNotificationPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -61,12 +62,15 @@ public class EpisodeTrackingService {
                 }
 
                 Notification notification = new Notification();
-
-                notification.setUser(entry.getUser());
+                User user = entry.getUser();
+                notification.setUser(user);
                 notification.setEpisode(episode);
-                notification.setMsg(entry.getTitle().getName() + " new episode number " + episode.getEpisodeNumber() +
-                                                        " willing be airing today don't forget to watch today");
+                String msg = entry.getTitle().getName() + " new episode number " + episode.getEpisodeNumber() +
+                        " willing be airing today don't forget to watch today";
+                notification.setMsg(msg);
                 notificationRepository.save(notification);
+                emailNotificationPublisher.publish(new EmailNotificationMessage(user.getEmail(),
+                        "NEW EPISODE WILL AIR TODAY",msg));
                 created++;
             }
         }

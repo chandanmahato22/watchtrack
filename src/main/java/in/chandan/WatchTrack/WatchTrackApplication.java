@@ -15,7 +15,8 @@ public class  WatchTrackApplication {
                                 .ignoreIfMissing().load();
 
         System.setProperty("TMDB_API_TOKEN",dotenv.get("TMDB_API_TOKEN"));
-
+        System.setProperty("MAIL_USERNAME",dotenv.get("MAIL_USERNAME"));
+        System.setProperty("MAIL_PASSWORD",dotenv.get("MAIL_PASSWORD"));
 		SpringApplication.run(WatchTrackApplication.class, args);
 	}
 

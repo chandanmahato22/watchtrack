@@ -1,6 +1,7 @@
 package in.chandan.WatchTrack.auth.service;
 
 import in.chandan.WatchTrack.auth.entity.PrincipalUser;
+import in.chandan.WatchTrack.excepitons.ResourceNotFoundException;
 import in.chandan.WatchTrack.users.entity.User;
 import in.chandan.WatchTrack.users.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,7 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsernameOrEmail(username,username).orElseThrow(
-                () -> new RuntimeException("user Not found")
+                () -> new ResourceNotFoundException("user with username :" + username + "not found")
         );
         return new PrincipalUser(user);
     }

@@ -38,7 +38,7 @@ public class SeasonService {
 
         season.setTitle(title);
         season.setSeasonNumber(seasonNumber);
-        season.setName(details.getName());
+        season.setName(title.getName());
         season.setAirDate(parseDate(details.getAirDate()));
 
         seasonRepository.save(season);

@@ -7,10 +7,11 @@ import in.chandan.WatchTrack.catalog.entity.Title;
 import in.chandan.WatchTrack.catalog.repository.EpisodeRepository;
 import in.chandan.WatchTrack.catalog.repository.SeasonRepository;
 import in.chandan.WatchTrack.catalog.repository.TitleRepository;
-import in.chandan.WatchTrack.catalog.service.SeasonService;
 import in.chandan.WatchTrack.catalog.service.TitleService;
 import in.chandan.WatchTrack.enums.LibraryStatus;
 import in.chandan.WatchTrack.enums.Provider;
+import in.chandan.WatchTrack.excepitons.BadRequestException;
+import in.chandan.WatchTrack.excepitons.ResourceNotFoundException;
 import in.chandan.WatchTrack.library.dto.AddToLibraryRequest;
 import in.chandan.WatchTrack.library.dto.LibraryData;
 import in.chandan.WatchTrack.library.dto.UpdateProgressRequest;
@@ -21,7 +22,6 @@ import in.chandan.WatchTrack.users.entity.User;
 import in.chandan.WatchTrack.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -70,7 +70,9 @@ public class LibraryService {
 
         if("TV".equals(request.getType())) {
             if(!validateProgress(title, request.getSeason(), request.getEpisode())){
-                throw new IllegalArgumentException("invalid seasonNumber or EpisodeNumber");
+                throw new BadRequestException("season : " + request.getSeason() +
+                        " or episode :" + request.getEpisode() +
+                        "doesn't exits for " + title.getName());
             }
             library.setCurrentSeason(request.getSeason());
             library.setCurrentEpisode(request.getEpisode());
@@ -96,18 +98,18 @@ public class LibraryService {
         User user = authService.getCurrentUser();
         Title title = titleRepository.findByExternalIdAndProvider(req.getExternalId(),
                                                                   Provider.TMDB).orElseThrow(
-                () -> new RuntimeException("Title not found")
+                () -> new ResourceNotFoundException("title not found")
         );
 
         UserLibrary library = libraryRepository.findByUserAndTitle(user, title).orElseThrow(
-                () -> new RuntimeException("Library entry not found")
+                () -> new ResourceNotFoundException("Library entry not found")
         );
         LibraryStatus status;
         try{
             status = LibraryStatus.valueOf(req.getStatus());
         }
         catch(IllegalArgumentException | NullPointerException e){
-            throw new IllegalArgumentException("Invalid library status");
+            throw new BadRequestException("Invalid library status : " + req.getStatus());
         }
 
         library.setStatus(status);
@@ -121,19 +123,21 @@ public class LibraryService {
             UpdateProgressRequest req){
             User user = authService.getCurrentUser();
             UserLibrary library = libraryRepository.findByIdAndUser(id,user).orElseThrow(
-                    () -> new RuntimeException("library item not found")
+                    () -> new ResourceNotFoundException("library item not found")
             );
             Title title = library.getTitle();
 
             if(title.getType() == null || String.valueOf(title.getType()).equals("MOVIE")){
-                throw new IllegalArgumentException("watch progress by season and episode " +
+                throw new BadRequestException("watch progress by season and episode " +
                         "only available for tv shows. ");
             }
             Integer seasonNumber = req.getCurrentSeason();
             Integer episodeNumber = req.getCurrentEpisode();
 
             if(!validateProgress(title, seasonNumber,episodeNumber)){
-                throw new IllegalArgumentException("invalid seasonNumber or EpisodeNumber");
+                throw new BadRequestException("season : " + seasonNumber +
+                        " or episode :" +episodeNumber +
+                        "doesn't exits for " + title.getName());
             }
             library.setCurrentEpisode(req.getCurrentEpisode());
             library.setCurrentSeason(req.getCurrentSeason());
@@ -141,47 +145,25 @@ public class LibraryService {
             return library;
     }
 
-//    private boolean validateProgress(Title title,Integer seasonNumber , Integer episodeNumber) {
-//        if(seasonNumber == null || seasonNumber < 1 || episodeNumber == null || episodeNumber < 1) return false;
-//        Season season = seasonRepository.findByTitleAndSeasonNumber(title, seasonNumber).orElse(null);
-//        if(season == null) return false;
-//        Episode episode = episodeRepository
-//                .findBySeasonAndEpisodeNumber(season, episodeNumber).orElse(null);
-//       return episode != null;
-//    }
-
-
     private boolean validateProgress(
             Title title,
             Integer seasonNumber,
             Integer episodeNumber) {
-
-        System.out.println("Title ID: " + title.getId());
-        System.out.println("TMDB ID: " + title.getExternalId());
-        System.out.println("Season number: " + seasonNumber);
-        System.out.println("Episode number: " + episodeNumber);
 
         Season season = seasonRepository
                 .findByTitleAndSeasonNumber(title, seasonNumber)
                 .orElse(null);
 
         if (season == null) {
-            System.out.println("DEBUG: Season not found for this title");
             return false;
         }
-
-        System.out.println("Found season ID: " + season.getId());
-
         Episode episode = episodeRepository
                 .findBySeasonAndEpisodeNumber(season, episodeNumber)
                 .orElse(null);
 
         if (episode == null) {
-            System.out.println("DEBUG: Episode not found in this season");
             return false;
         }
-
-        System.out.println("Found episode ID: " + episode.getId());
         return true;
     }
 

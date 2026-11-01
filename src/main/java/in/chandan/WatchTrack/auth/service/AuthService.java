@@ -2,12 +2,13 @@ package in.chandan.WatchTrack.auth.service;
 
 import in.chandan.WatchTrack.auth.dto.LoginDto;
 import in.chandan.WatchTrack.auth.dto.RegDto;
+import in.chandan.WatchTrack.excepitons.ResourceNotFoundException;
+import in.chandan.WatchTrack.excepitons.TooManyRequestException;
+import in.chandan.WatchTrack.excepitons.UnauthorizedException;
 import in.chandan.WatchTrack.users.entity.User;
 import in.chandan.WatchTrack.users.enums.Roles;
 import in.chandan.WatchTrack.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.catalina.webresources.JarWarResource;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,23 +45,23 @@ public class AuthService {
         return "Register successful for " + req.getUsername();
     }
 
-    public String verifyUser(LoginDto req, HttpServletRequest servletRequest) {
+    public String verifyUser(LoginDto req, HttpServletRequest servletRequest)  {
         String ip = servletRequest.getRemoteAddr();
         if(rateLimitService.isBlocked(ip)){
-            return "Too Many Failed Attempt try again later";
+            throw new TooManyRequestException("Too Many Failed Attempt try again later");
         }
 
         try {
         User user = userRepository.findByUsernameOrEmail(req.getUsernameOrEmail()
                 ,req.getUsernameOrEmail()).orElseThrow(
-                    () -> new RuntimeException("user not found")
+                    () -> new ResourceNotFoundException("user with " + req.getUsernameOrEmail() + " not found")
             );
             if(passwordEncoder.matches(req.getPassword(),user.getPassword())) {
                 rateLimitService.resetLimit(ip);
                 return jwtService.getToken(req);
             }
             else {
-                throw new RuntimeException("wrong credentials");
+                throw new UnauthorizedException("wrong credentials");
             }
         }
         catch (RuntimeException ex){
@@ -72,7 +73,7 @@ public class AuthService {
     public User getCurrentUser(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username).orElseThrow(
-                () -> new RuntimeException("user not found")
+                () -> new ResourceNotFoundException("user with username :" + username + "not found")
         );
         return user;
     }
